@@ -1,9 +1,11 @@
-// Серверные хелперы авторизации/прав. Используются в Server Components
-// страниц, чтобы получить текущего сотрудника (с его ролью из public.employees)
-// и скрыть в UI то, что RLS всё равно не даст сделать в БД.
+// Серверные хелперы авторизации. Используются в Server Components
+// страниц, чтобы получить текущего сотрудника (с его ролью из public.employees).
+// ВАЖНО: этот файл импортирует next/headers (через lib/supabase/server) и
+// поэтому годится только для серверного кода. Для клиентских компонентов
+// ("use client") используйте @/lib/permissions напрямую.
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { Employee, EmployeeRole } from "@/types/database";
+import type { Employee } from "@/types/database";
 
 export async function getCurrentEmployee(): Promise<Employee | null> {
   const supabase = createClient();
@@ -32,33 +34,6 @@ export async function requireEmployee(): Promise<Employee> {
   return employee as Employee;
 }
 
-// Права по ролям — единая карта, чтобы не размазывать if/else по всему UI.
-// Реальное разграничение обеспечивает RLS в БД; это — только для UI (скрыть кнопки/пункты меню).
-const PERMISSIONS: Record<string, EmployeeRole[]> = {
-  "objects.create": ["director", "gip"],
-  "objects.edit": ["director", "gip"],
-  "objects.delete": ["director"],
-  "clients.edit": ["director", "gip", "accountant", "office_manager"],
-  "stages.manage": ["director"],
-  "letters.manage": ["director", "office_manager"],
-  "contracts.manage": ["director", "accountant"],
-  "orders.manage": ["director", "office_manager", "hr"],
-  "proposals.manage": ["director", "accountant", "gip"],
-  "employees.manage": ["director", "hr"],
-  "timesheet.approve": ["director", "hr"],
-};
-
-export function can(employee: Pick<Employee, "role">, action: keyof typeof PERMISSIONS): boolean {
-  const allowed = PERMISSIONS[action];
-  return allowed ? allowed.includes(employee.role) : false;
-}
-
-export const ROLE_LABELS: Record<EmployeeRole, string> = {
-  director: "Директор",
-  gip: "ГИП",
-  engineer: "Инженер",
-  accountant: "Бухгалтер",
-  office_manager: "Офис-менеджер",
-  hr: "Кадры (HR)",
-  viewer: "Наблюдатель",
-};
+// Реэкспорт для обратной совместимости — серверные страницы могут
+// по-прежнему импортировать can/ROLE_LABELS из "@/lib/auth".
+export { can, ROLE_LABELS } from "@/lib/permissions";
