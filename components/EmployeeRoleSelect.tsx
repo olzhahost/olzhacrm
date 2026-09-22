@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import { updateEmployeeRole, toggleEmployeeActive } from "@/lib/actions/employees";
-import { ROLE_LABELS } from "@/lib/auth";
+import { ROLE_LABELS } from "@/lib/permissions";
 import type { EmployeeRole } from "@/types/database";
 
 export default function EmployeeRoleSelect({
